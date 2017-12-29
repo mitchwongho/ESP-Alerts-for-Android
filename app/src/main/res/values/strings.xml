@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">ESP Alerts</string>
+    <string name="service_name">ESPNotification Listener</string>
+    <string name="choose_app">Choose App</string>
+</resources>
