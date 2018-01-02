@@ -17,6 +17,7 @@ class NotificationListener : NotificationListenerService() {
 
     companion object {
         val EXTRA_ACTION = "ESP"
+        val EXTRA_NOTIFICATION_DISMISSED = "EXTRA_NOTIFICATION_DISMISSED"
         val EXTRA_APP_NAME = "EXTRA_APP_NAME"
         val EXTRA_NOTIFICATION_ID_INT = "EXTRA_NOTIFICATION_ID_INT"
         val EXTRA_TITLE = "EXTRA_TITLE"
@@ -58,6 +59,7 @@ class NotificationListener : NotificationListenerService() {
             intent.putExtra(EXTRA_APP_NAME, appName)
             intent.putExtra(EXTRA_TITLE, title)
             intent.putExtra(EXTRA_BODY, body)
+            intent.putExtra(EXTRA_NOTIFICATION_DISMISSED, false)
             intent.putExtra(EXTRA_TIMESTAMP_LONG, sbn.postTime)
             LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
         }
@@ -78,10 +80,25 @@ class NotificationListener : NotificationListenerService() {
         val body: String? = bundle?.getCharSequence("android.text").toString()
 
         val appInfo = applicationContext.packageManager.getApplicationInfo(sbn.packageName, PackageManager.GET_META_DATA)
+        val appName = applicationContext.packageManager.getApplicationLabel(appInfo)
+        Timber.d("onNotificationPosted {app=${appName},id=${sbn.id},ticker=$ticker,title=$title,body=$body,posted=${sbn.postTime},package=${sbn.packageName}}")
+
+        val allowedPackages: MutableSet<String> = MainApplication.sharedPrefs.getStringSet(MainApplication.PREFS_KEY_ALLOWED_PACKAGES, mutableSetOf())
 
         Timber.d("onNotificationRemoved {app=${applicationContext.packageManager.getApplicationLabel(appInfo)},id=${sbn.id},ticker=$ticker,title=$title,body=$body,posted=${sbn.postTime},package=${sbn.packageName}}")
 
-
+        // broadcast StatusBarNotication (exclude own notifications)
+        if (sbn.id != ForegroundService.SERVICE_ID
+                && allowedPackages.contains(sbn.packageName)) {
+            val intent = Intent(EXTRA_ACTION)
+            intent.putExtra(EXTRA_NOTIFICATION_ID_INT, sbn.id)
+            intent.putExtra(EXTRA_APP_NAME, appName)
+            intent.putExtra(EXTRA_TITLE, title)
+            intent.putExtra(EXTRA_BODY, body)
+            intent.putExtra(EXTRA_NOTIFICATION_DISMISSED, true)
+            intent.putExtra(EXTRA_TIMESTAMP_LONG, sbn.postTime)
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
+        }
     }
 
 

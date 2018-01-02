@@ -25,4 +25,6 @@ class MainApplication : MultiDexApplication() {
             Timber.plant(Timber.DebugTree())
         }
     }
+
+
 }

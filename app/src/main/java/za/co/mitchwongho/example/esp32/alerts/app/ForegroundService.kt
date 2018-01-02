@@ -34,7 +34,7 @@ class ForegroundService : Service() {
         val TAG = ForegroundService::class.java.simpleName
         val SERVICE_ID = 9001
         val NOTIFICATION_CHANNEL = BuildConfig.APPLICATION_ID
-        val VESPA_DEVICE_ADDRESS = "24:0A:C4:13:58:EA"
+        val VESPA_DEVICE_ADDRESS = "24:0A:C4:13:58:EA" // <--- YOUR ESP32 MAC address here
         val formatter = SimpleDateFormat.getTimeInstance(DateFormat.SHORT)
     }
 
@@ -111,6 +111,8 @@ class ForegroundService : Service() {
         override fun onDeviceConnected(device: BluetoothDevice) {
             super.onDeviceConnected(device)
             notify("Connected to ${device.name}")
+//            val success = (bleManager as LEManager).writeTime(formatter.format(Date()))
+//            Timber.d("writeTime {success=$success}")
         }
 
         /**
@@ -174,17 +176,24 @@ class ForegroundService : Service() {
                 val notificationTitle = intent.getStringExtra(NotificationListener.EXTRA_TITLE)
                 val notificationBody = intent.getStringExtra(NotificationListener.EXTRA_BODY)
                 val notificationTimestamp = intent.getLongExtra(NotificationListener.EXTRA_TIMESTAMP_LONG, 0)
+                val notificationDismissed = intent.getBooleanExtra(NotificationListener.EXTRA_NOTIFICATION_DISMISSED, true)
                 //
-                val buffer = StringBuffer(256)
-                buffer.append(notificationTitle)
-                buffer.append(":\"")
-                buffer.append(notificationBody)
-                buffer.append("\" via ")
-                buffer.append(notificationAppName).append(" @ ")
-                buffer.append(formatter.format(Date(notificationTimestamp)))
-                val success = (bleManager as LEManager).writeMessage(buffer.substring(0, Math.min(buffer.length, 256)))
-                lastPost = notificationTimestamp
-                Timber.d("writeMessage {success=$success}")
+                if (notificationDismissed) {
+                    val success = (bleManager as LEManager).writeTime(formatter.format(Date()))
+                    lastPost = notificationTimestamp
+                    Timber.d("writeTime {success=$success}")
+                } else {
+                    val buffer = StringBuffer(256)
+                    buffer.append(notificationTitle)
+                    buffer.append(":\"")
+                    buffer.append(notificationBody)
+                    buffer.append("\" via ")
+                    buffer.append(notificationAppName).append(" @ ")
+                    buffer.append(formatter.format(Date(notificationTimestamp)))
+                    val success = (bleManager as LEManager).writeMessage(buffer.substring(0, Math.min(buffer.length, 256)))
+                    lastPost = notificationTimestamp
+                    Timber.d("writeMessage {success=$success}")
+                }
             }
         }
     }

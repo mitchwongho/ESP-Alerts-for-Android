@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothGattService
 import android.content.Context
 import no.nordicsemi.android.ble.BleManager
 import timber.log.Timber
+import za.co.mitchwongho.example.esp32.alerts.app.ForegroundService
 import java.util.*
 
 /**
@@ -14,13 +15,11 @@ import java.util.*
 class LEManager : BleManager<LeManagerCallbacks> {
 
     var espDisplayMessageCharacteristic: BluetoothGattCharacteristic? = null
-//    var espDisplayTimeCharacteristic: BluetoothGattCharacteristic? = null
 
     companion object {
         val TAG = LEManager::class.java.simpleName
         val ESP_SERVICE_UUID = UUID.fromString("3db02924-b2a6-4d47-be1f-0f90ad62a048")
         val ESP_DISPLAY_MESSAGE_CHARACTERISITC_UUID = UUID.fromString("8d8218b6-97bc-4527-a8db-13094ac06b1d")
-//        val ESP_DISPLAY_TIME_CHARACTERISITC_UUID = UUID.fromString("b7b0a14b-3e94-488f-b262-5d584a1ef9e1")
     }
 
     constructor(context: Context) : super(context)
@@ -116,7 +115,7 @@ class LEManager : BleManager<LeManagerCallbacks> {
         override fun initGatt(gatt: BluetoothGatt?): Deque<Request> {
             val queue = ArrayDeque<Request>()
             if (espDisplayMessageCharacteristic != null) {
-                val request = Request.newWriteRequest(espDisplayMessageCharacteristic, "Ready, ${gatt?.device?.name}!".toByteArray())
+                val request = Request.newWriteRequest(espDisplayMessageCharacteristic, ForegroundService.formatter.format(Date()).toByteArray())
                 queue.add(request)
             }
             return queue
