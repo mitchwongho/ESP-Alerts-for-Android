@@ -121,7 +121,7 @@ class ForegroundService : Service() {
          */
         override fun onDeviceConnecting(device: BluetoothDevice) {
             super.onDeviceConnecting(device)
-            notify("Connecting to ${device.name}")
+            notify("Connecting to ${ if (device.name.isNullOrEmpty()) "device" else device.name }")
         }
 
         /**
