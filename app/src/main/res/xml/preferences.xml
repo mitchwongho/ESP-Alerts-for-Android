@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <CheckBoxPreference
+        android:key="pref_as_bg_service"
+        android:title="@string/run_as_service"
+        android:summary="@string/run_as_service_summary"
+        android:defaultValue="false"/>
+    <CheckBoxPreference
+        android:key="pref_start_at_boot"
+        android:title="@string/start_at_boot"
+        android:summary="@string/start_service_at_boot"
+        android:defaultValue="false"/>
+    <EditTextPreference
+        android:key="pref_remote_mac_address"
+        android:title="@string/remote_mac_address"
+        android:inputType="textCapCharacters"
+        android:summary="@string/remote_mac_address_default"
+        android:defaultValue="@string/remote_mac_address_default"/>
+</PreferenceScreen>

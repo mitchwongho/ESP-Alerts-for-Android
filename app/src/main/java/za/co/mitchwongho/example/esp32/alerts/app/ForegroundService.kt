@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.content.BroadcastReceiver
@@ -11,9 +12,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
+import android.preference.PreferenceManager
 import android.support.v4.app.NotificationCompat
 import android.support.v4.content.LocalBroadcastManager
-import android.util.Log
 import no.nordicsemi.android.ble.BleManager
 import timber.log.Timber
 import za.co.mitchwongho.example.esp32.alerts.BuildConfig
@@ -31,13 +32,14 @@ import java.util.*
 class ForegroundService : Service() {
 
     companion object {
-        val TAG = ForegroundService::class.java.simpleName
+        val NOTIFICATION_DISPLAY_TIMEOUT = 2 * 60 * 1000 //2 minutes
         val SERVICE_ID = 9001
         val NOTIFICATION_CHANNEL = BuildConfig.APPLICATION_ID
-        val VESPA_DEVICE_ADDRESS = "24:0A:C4:13:58:EA" // <--- YOUR ESP32 MAC address here
+        val VESPA_DEVICE_ADDRESS = "00:00:00:00:00:00"//""24:0A:C4:13:58:EA" // <--- YOUR ESP32 MAC address here
         val formatter = SimpleDateFormat.getTimeInstance(DateFormat.SHORT)
     }
 
+    private var startId = 0;
     lateinit var bleManager: BleManager<LeManagerCallbacks>
     var lastPost: Long = 0L
     /**
@@ -45,23 +47,34 @@ class ForegroundService : Service() {
      */
     override fun onCreate() {
         super.onCreate()
+        Timber.w("onCreate")
+        val remoteMacAddress = PreferenceManager.getDefaultSharedPreferences(this)
+                .getString(SettingsActivity.PREF_KEY_REMOTE_MAC_ADDRESS, VESPA_DEVICE_ADDRESS)
 
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        val leDevice = bluetoothManager.adapter.getRemoteDevice(VESPA_DEVICE_ADDRESS)
+        val leDevice = bluetoothManager.adapter.getRemoteDevice(remoteMacAddress)
         bleManager = LEManager(this)
         bleManager.setGattCallbacks(bleManagerCallback)
-        bleManager.connect(leDevice)
+        if (bluetoothManager.adapter.state == BluetoothAdapter.STATE_ON) {
+            bleManager.connect(leDevice)
+        }
 
         val intentFilter = IntentFilter(NotificationListener.EXTRA_ACTION)
         LocalBroadcastManager.getInstance(this).registerReceiver(localReceiver, intentFilter)
 
         registerReceiver(tickReceiver, IntentFilter(Intent.ACTION_TIME_TICK))
+        registerReceiver(bluetoothReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
 
     }
 
     override fun onDestroy() {
+        Timber.w("onDestroy")
+        startId = 0
+        bleManager.close()
         LocalBroadcastManager.getInstance(this).unregisterReceiver(localReceiver)
         unregisterReceiver(tickReceiver)
+        unregisterReceiver(bluetoothReceiver)
+        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
         super.onDestroy()
     }
 
@@ -86,10 +99,13 @@ class ForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
-        if (intent == null) {
+        Timber.w("onStartCommand {intent=${intent != null},flags=$flags,startId=$startId}")
+        if (intent == null || this.startId != 0) {
             //service restarted
+            Timber.w("onStartCommand - already running")
         } else {
             //started by intent or pending intent
+            this.startId = startId
             val notification = notify("Scanning...")
             startForeground(SERVICE_ID, notification)
         }
@@ -100,7 +116,7 @@ class ForegroundService : Service() {
         return null
     }
 
-    var bleManagerCallback: LeManagerCallbacks = object : LeManagerCallbacks() {
+    val bleManagerCallback: LeManagerCallbacks = object : LeManagerCallbacks() {
         /**
          * Called when the device has been connected. This does not mean that the application may start communication.
          * A service discovery will be handled automatically after this call. Service discovery
@@ -123,7 +139,7 @@ class ForegroundService : Service() {
          */
         override fun onDeviceConnecting(device: BluetoothDevice) {
             super.onDeviceConnecting(device)
-            notify("Connecting to ${ if (device.name.isNullOrEmpty()) "device" else device.name }")
+            notify("Connecting to ${if (device.name.isNullOrEmpty()) "device" else device.name}")
         }
 
         /**
@@ -157,11 +173,16 @@ class ForegroundService : Service() {
             super.onLinklossOccur(device)
             notify("Lost link to ${device.name}")
         }
+
+        override fun onError(device: BluetoothDevice, message: String?, errorCode: Int) {
+            super.onError(device, message, errorCode)
+            stopSelf(startId)
+        }
     }
 
     var tickReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (System.currentTimeMillis() - lastPost > (2 * 60 * 1000)) {
+            if (System.currentTimeMillis() - lastPost > NOTIFICATION_DISPLAY_TIMEOUT) {
                 (bleManager as LEManager).writeTime(formatter.format(Date()))
             }
         }
@@ -170,7 +191,7 @@ class ForegroundService : Service() {
     var localReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (bleManager.isConnected && intent != null) {
-                Log.d(TAG, "onReceive")
+                Timber.d("onReceive")
                 val notificationId = intent.getIntExtra(NotificationListener.EXTRA_NOTIFICATION_ID_INT, 0)
                 val notificationAppName = intent.getStringExtra(NotificationListener.EXTRA_APP_NAME)
                 val notificationTitle = intent.getStringExtra(NotificationListener.EXTRA_TITLE)
@@ -193,6 +214,32 @@ class ForegroundService : Service() {
                     val success = (bleManager as LEManager).writeMessage(buffer.substring(0, Math.min(buffer.length, 256)))
                     lastPost = notificationTimestamp
                     Timber.d("writeMessage {success=$success}")
+                }
+            }
+        }
+    }
+
+    val bluetoothReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent?) {
+            if (intent?.action?.equals(BluetoothAdapter.ACTION_STATE_CHANGED) == true) {
+                val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
+                when (state) {
+                    BluetoothAdapter.STATE_ON -> {
+                        // TODO: 2018/01/03 connect to remote
+                        val remoteMacAddress = PreferenceManager.getDefaultSharedPreferences(context)
+                                .getString(SettingsActivity.PREF_KEY_REMOTE_MAC_ADDRESS, VESPA_DEVICE_ADDRESS)
+                        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+                        val leDevice = bluetoothManager.adapter.getRemoteDevice(remoteMacAddress)
+
+                        bleManager = LEManager(context)
+                        bleManager.setGattCallbacks(bleManagerCallback)
+                        bleManager.connect(leDevice)
+                    }
+                    BluetoothAdapter.STATE_TURNING_OFF -> {
+                        // TODO: 2018/01/03 close connections
+                        bleManager.disconnect()
+                        bleManager.close()
+                    }
                 }
             }
         }

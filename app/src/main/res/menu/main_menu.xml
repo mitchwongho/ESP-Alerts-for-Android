@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/menu_item_prefs"
+        android:title="@string/settings"
+        android:contentDescription="@string/settings"
+        />
+    <item android:id="@+id/menu_item_kill"
+        android:title="@string/kill_service"
+        android:contentDescription="@string/kill_service"
+        />
+    <item android:id="@+id/menu_item_start"
+        android:title="@string/start_service"
+        android:contentDescription="@string/start_service"
+        android:visible="false"
+        />
+
+</menu>

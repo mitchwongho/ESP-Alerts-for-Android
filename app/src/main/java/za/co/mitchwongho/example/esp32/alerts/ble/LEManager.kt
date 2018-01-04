@@ -49,7 +49,7 @@ class LEManager : BleManager<LeManagerCallbacks> {
     }
 
     private fun write(message: String): Boolean {
-        Timber.d("write {connected=$isConnected,hasCharacteristic=${espDisplayMessageCharacteristic != null}}")
+        //Timber.d("write {connected=$isConnected,hasCharacteristic=${espDisplayMessageCharacteristic != null}}")
         return if (isConnected && espDisplayMessageCharacteristic != null) {
             val request = Request.newWriteRequest(espDisplayMessageCharacteristic, message.toByteArray())
             enqueue(request)
@@ -115,7 +115,7 @@ class LEManager : BleManager<LeManagerCallbacks> {
         override fun initGatt(gatt: BluetoothGatt?): Deque<Request> {
             val queue = ArrayDeque<Request>()
             if (espDisplayMessageCharacteristic != null) {
-                val request = Request.newWriteRequest(espDisplayMessageCharacteristic, ForegroundService.formatter.format(Date()).toByteArray())
+                val request = Request.newWriteRequest(espDisplayMessageCharacteristic, ("1"+ForegroundService.formatter.format(Date())).toByteArray())
                 queue.add(request)
             }
             return queue

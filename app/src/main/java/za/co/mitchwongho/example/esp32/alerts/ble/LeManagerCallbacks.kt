@@ -1,17 +1,13 @@
 package za.co.mitchwongho.example.esp32.alerts.ble
 
 import android.bluetooth.BluetoothDevice
-import android.util.Log
 import no.nordicsemi.android.ble.BleManagerCallbacks
+import timber.log.Timber
 
 /**
  * Implements the BLEManager callback methods
  */
 open class LeManagerCallbacks : BleManagerCallbacks {
-
-    companion object {
-        val TAG = LeManagerCallbacks::class.java.simpleName
-    }
 
     /**
      * Called when the Android device started connecting to given device.
@@ -20,8 +16,7 @@ open class LeManagerCallbacks : BleManagerCallbacks {
      * @param device the device that got connected
      */
     override fun onDeviceConnecting(device: BluetoothDevice) {
-        //TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        Log.d( TAG, "onDeviceConnecting {address=${device.address},name=${device.name}}")
+        Timber.d("onDeviceConnecting {address=${device.address},name=${device.name}}")
     }
 
     /**
@@ -32,8 +27,7 @@ open class LeManagerCallbacks : BleManagerCallbacks {
      * @param device the device that got connected
      */
     override fun onDeviceConnected(device: BluetoothDevice) {
-//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        Log.d( TAG, "onDeviceConnected {address=${device.address},name=${device.name}}")
+        Timber.d("onDeviceConnected {address=${device.address},name=${device.name}}")
     }
 
     /**
@@ -41,8 +35,7 @@ open class LeManagerCallbacks : BleManagerCallbacks {
      * @param device the device that gets disconnecting
      */
     override fun onDeviceDisconnecting(device: BluetoothDevice) {
-//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        Log.d( TAG, "onDeviceDisconnecting {address=${device.address},name=${device.name}}")
+        Timber.d("onDeviceDisconnecting {address=${device.address},name=${device.name}}")
     }
 
     /**
@@ -53,8 +46,7 @@ open class LeManagerCallbacks : BleManagerCallbacks {
      * @param device the device that got disconnected
      */
     override fun onDeviceDisconnected(device: BluetoothDevice) {
-//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        Log.d( TAG, "onDeviceDisconnected {address=${device.address},name=${device.name}}")
+        Timber.d("onDeviceDisconnected {address=${device.address},name=${device.name}}")
     }
 
     /**
@@ -64,8 +56,7 @@ open class LeManagerCallbacks : BleManagerCallbacks {
      * @param device the device that got disconnected due to a link loss
      */
     override fun onLinklossOccur(device: BluetoothDevice) {
-//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        Log.d( TAG, "onLinklossOccur {address=${device.address},name=${device.name}}")
+        Timber.d("onLinklossOccur {address=${device.address},name=${device.name}}")
     }
 
     /**
@@ -83,8 +74,7 @@ open class LeManagerCallbacks : BleManagerCallbacks {
      * if `true` the secondary services were also found on the device.
      */
     override fun onServicesDiscovered(device: BluetoothDevice, optionalServicesFound: Boolean) {
-//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        Log.d( TAG, "onServiceDiscovered {address=${device.address},name=${device.name}}")
+        Timber.d("onServiceDiscovered {address=${device.address},name=${device.name}}")
     }
 
     /**
@@ -92,8 +82,7 @@ open class LeManagerCallbacks : BleManagerCallbacks {
      * @param device the device that get ready
      */
     override fun onDeviceReady(device: BluetoothDevice) {
-//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        Log.d( TAG, "onDeviceReady {address=${device.address},name=${device.name}}")
+        Timber.d("onDeviceReady {address=${device.address},name=${device.name}}")
     }
 
     /**
@@ -149,8 +138,7 @@ open class LeManagerCallbacks : BleManagerCallbacks {
      * @param device the device that caused an error
      */
     override fun onError(device: BluetoothDevice, message: String?, errorCode: Int) {
-//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        Log.w( TAG, "onError {address=${device.address},name=${device.name},msg=${message},err=$errorCode}")
+        Timber.e("onError {address=${device.address},name=${device.name},msg=${message},err=$errorCode}")
     }
 
     /**
@@ -158,7 +146,6 @@ open class LeManagerCallbacks : BleManagerCallbacks {
      * @param device the device that failed to connect due to lack of required services
      */
     override fun onDeviceNotSupported(device: BluetoothDevice) {
-//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        Log.d( TAG, "onDeviceNotSupported {address=${device.address},name=${device.name}}")
+        Timber.d("onDeviceNotSupported {address=${device.address},name=${device.name}}")
     }
 }

@@ -21,6 +21,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".app.SettingsActivity"
+            android:label="@string/preferences"/>
         <!-- Notification Listener -->
         <service android:name=".app.NotificationListener"
             android:label="@string/app_name"
