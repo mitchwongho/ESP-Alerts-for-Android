@@ -46,6 +46,7 @@ class ForegroundService : Service() {
      */
     override fun onCreate() {
         super.onCreate()
+        initNotificationChannel()
         Timber.w("onCreate")
         val remoteMacAddress = PreferenceManager.getDefaultSharedPreferences(this)
                 .getString(SettingsActivity.PREF_KEY_REMOTE_MAC_ADDRESS, VESPA_DEVICE_ADDRESS)
@@ -63,9 +64,6 @@ class ForegroundService : Service() {
 
         registerReceiver(tickReceiver, IntentFilter(Intent.ACTION_TIME_TICK))
         registerReceiver(bluetoothReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
-
-        initNotificationChannel()
-
     }
 
     @TargetApi(Build.VERSION_CODES.O)
@@ -88,6 +86,11 @@ class ForegroundService : Service() {
         unregisterReceiver(tickReceiver)
         unregisterReceiver(bluetoothReceiver)
         (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationMgr = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationMgr.deleteNotificationChannel(NOTIFICATION_CHANNEL)
+        }
         super.onDestroy()
     }
 
