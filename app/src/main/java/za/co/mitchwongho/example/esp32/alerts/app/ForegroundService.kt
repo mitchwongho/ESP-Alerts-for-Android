@@ -1,9 +1,7 @@
 package za.co.mitchwongho.example.esp32.alerts.app
 
-import android.app.Notification
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.app.Service
+import android.annotation.TargetApi
+import android.app.*
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
@@ -11,6 +9,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.os.IBinder
 import android.preference.PreferenceManager
 import android.support.v4.app.NotificationCompat
@@ -65,6 +64,20 @@ class ForegroundService : Service() {
         registerReceiver(tickReceiver, IntentFilter(Intent.ACTION_TIME_TICK))
         registerReceiver(bluetoothReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
 
+        initNotificationChannel()
+
+    }
+
+    @TargetApi(Build.VERSION_CODES.O)
+    private fun initNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationMgr = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val notificationChannel = NotificationChannel(NOTIFICATION_CHANNEL, BuildConfig.APPLICATION_ID, NotificationManager.IMPORTANCE_DEFAULT)
+            notificationChannel.description = getString(R.string.channel_desc)
+            notificationChannel.enableLights(false)
+            notificationChannel.enableVibration( false)
+            notificationMgr.createNotificationChannel(notificationChannel)
+        }
     }
 
     override fun onDestroy() {
