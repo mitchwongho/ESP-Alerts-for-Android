@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import android.preference.PreferenceManager
@@ -70,7 +71,7 @@ class ForegroundService : Service() {
     private fun initNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationMgr = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val notificationChannel = NotificationChannel(NOTIFICATION_CHANNEL, BuildConfig.APPLICATION_ID, NotificationManager.IMPORTANCE_DEFAULT)
+            val notificationChannel = NotificationChannel(NOTIFICATION_CHANNEL, BuildConfig.APPLICATION_ID, NotificationManager.IMPORTANCE_LOW)
             notificationChannel.description = getString(R.string.channel_desc)
             notificationChannel.enableLights(false)
             notificationChannel.enableVibration( false)
@@ -108,6 +109,8 @@ class ForegroundService : Service() {
                 .setContentTitle(getString(R.string.app_name))
                 .setContentText(contentText)
                 .setContentIntent(pendingIntent)
+                .setSound(Uri.EMPTY)
+                .setOnlyAlertOnce(true)
                 .build()
         (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(SERVICE_ID, notification)
         return notification
@@ -143,8 +146,6 @@ class ForegroundService : Service() {
         override fun onDeviceConnected(device: BluetoothDevice) {
             super.onDeviceConnected(device)
             notify("Connected to ${device.name}")
-//            val success = (bleManager as LEManager).writeTime(formatter.format(Date()))
-//            Timber.d("writeTime {success=$success}")
         }
 
         /**
