@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
+import android.os.BatteryManager
 import android.os.Build
 import android.os.IBinder
 import android.preference.PreferenceManager
@@ -74,7 +75,7 @@ class ForegroundService : Service() {
             val notificationChannel = NotificationChannel(NOTIFICATION_CHANNEL, BuildConfig.APPLICATION_ID, NotificationManager.IMPORTANCE_LOW)
             notificationChannel.description = getString(R.string.channel_desc)
             notificationChannel.enableLights(false)
-            notificationChannel.enableVibration( false)
+            notificationChannel.enableVibration(false)
             notificationMgr.createNotificationChannel(notificationChannel)
         }
     }
@@ -198,9 +199,9 @@ class ForegroundService : Service() {
     }
 
     var tickReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
+        override fun onReceive(context: Context, intent: Intent?) {
             if (System.currentTimeMillis() - lastPost > NOTIFICATION_DISPLAY_TIMEOUT) {
-                (bleManager as LEManager).writeTime(formatter.format(Date()))
+                (bleManager as LEManager).writeTimeAndBatt(formatter.format(Date()))
             }
         }
     }
@@ -217,7 +218,7 @@ class ForegroundService : Service() {
                 val notificationDismissed = intent.getBooleanExtra(NotificationListener.EXTRA_NOTIFICATION_DISMISSED, true)
                 //
                 if (notificationDismissed) {
-                    val success = (bleManager as LEManager).writeTime(formatter.format(Date()))
+                    val success = (bleManager as LEManager).writeTimeAndBatt(formatter.format(Date()))
                     lastPost = notificationTimestamp
                     Timber.d("writeTime {success=$success}")
                 } else {
@@ -228,7 +229,7 @@ class ForegroundService : Service() {
                     buffer.append("\" via ")
                     buffer.append(notificationAppName).append(" @ ")
                     buffer.append(formatter.format(Date(notificationTimestamp)))
-                    val success = (bleManager as LEManager).writeMessage(buffer.substring(0, Math.min(buffer.length, 256)))
+                    val success = (bleManager as LEManager).writeNotification(buffer.substring(0, Math.min(buffer.length, 256)))
                     lastPost = notificationTimestamp
                     Timber.d("writeMessage {success=$success}")
                 }

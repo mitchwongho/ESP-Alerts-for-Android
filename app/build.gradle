@@ -8,7 +8,7 @@ android {
     compileSdkVersion 27
     defaultConfig {
         applicationId "za.co.mitchwongho.example.esp32.alerts"
-        minSdkVersion 20
+        minSdkVersion 21
         targetSdkVersion 27
         versionCode 1
         versionName "1.0"

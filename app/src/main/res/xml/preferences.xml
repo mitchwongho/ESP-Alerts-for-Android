@@ -10,6 +10,11 @@
         android:title="@string/start_at_boot"
         android:summary="@string/start_service_at_boot"
         android:defaultValue="false"/>
+    <CheckBoxPreference
+        android:key="pref_flip_vertically"
+        android:title="@string/flip_vertically"
+        android:summary="@string/flip_vertically_summary"
+        android:defaultValue="false"/>
     <EditTextPreference
         android:key="pref_remote_mac_address"
         android:title="@string/remote_mac_address"

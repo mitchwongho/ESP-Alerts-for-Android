@@ -16,4 +16,6 @@
     <string name="start_at_boot">Start at boot</string>
     <string name="start_service_at_boot">Enable to automatically start the service after the operating system boots up</string>
     <string name="channel_desc">Connection status notifications</string>
+    <string name="flip_vertically">Flip display vertically</string>
+    <string name="flip_vertically_summary">Enable to flip the display vertically</string>
 </resources>

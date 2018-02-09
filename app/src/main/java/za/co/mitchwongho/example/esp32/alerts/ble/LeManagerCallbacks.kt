@@ -27,6 +27,7 @@ open class LeManagerCallbacks : BleManagerCallbacks {
      * @param device the device that got connected
      */
     override fun onDeviceConnected(device: BluetoothDevice) {
+        
         Timber.d("onDeviceConnected {address=${device.address},name=${device.name}}")
     }
 
