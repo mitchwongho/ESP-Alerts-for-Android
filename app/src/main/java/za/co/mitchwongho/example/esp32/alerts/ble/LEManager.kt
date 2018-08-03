@@ -9,6 +9,7 @@ import android.content.IntentFilter
 import android.os.BatteryManager
 import android.preference.PreferenceManager
 import no.nordicsemi.android.ble.BleManager
+import no.nordicsemi.android.ble.Request
 import timber.log.Timber
 import za.co.mitchwongho.example.esp32.alerts.app.ForegroundService
 import za.co.mitchwongho.example.esp32.alerts.app.SettingsActivity
