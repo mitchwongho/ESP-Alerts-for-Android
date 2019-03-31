@@ -9,6 +9,11 @@ import android.content.IntentFilter
 import android.os.BatteryManager
 import android.preference.PreferenceManager
 import no.nordicsemi.android.ble.BleManager
+import no.nordicsemi.android.ble.Request
+import no.nordicsemi.android.ble.callback.DataReceivedCallback
+import no.nordicsemi.android.ble.callback.FailCallback
+import no.nordicsemi.android.ble.callback.MtuCallback
+import no.nordicsemi.android.ble.callback.SuccessCallback
 import timber.log.Timber
 import za.co.mitchwongho.example.esp32.alerts.app.ForegroundService
 import za.co.mitchwongho.example.esp32.alerts.app.SettingsActivity
@@ -24,7 +29,7 @@ class LEManager : BleManager<LeManagerCallbacks> {
     var espDisplayOrientationCharacteristic: BluetoothGattCharacteristic? = null
 
     companion object {
-        val TAG = LEManager::class.java.simpleName
+        val MTU = 500
         val ESP_SERVICE_UUID = UUID.fromString("3db02924-b2a6-4d47-be1f-0f90ad62a048")
         val ESP_DISPLAY_MESSAGE_CHARACTERISITC_UUID = UUID.fromString("8d8218b6-97bc-4527-a8db-13094ac06b1d")
         val ESP_DISPLAY_TIME_CHARACTERISITC_UUID = UUID.fromString("b7b0a14b-3e94-488f-b262-5d584a1ef9e1")
@@ -37,7 +42,7 @@ class LEManager : BleManager<LeManagerCallbacks> {
             val scale = batteryStatus?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
 
             val batteryLevelPercent: Int = ((level.toFloat() / scale.toFloat()) * 100f).toInt()
-            Timber.d("writeTimeAndBatt {level=$level,scale=$scale,batteryLevel=$batteryLevelPercent%}")
+            Timber.d("readTimeAndBatt {level=$level,scale=$scale,batteryLevel=$batteryLevelPercent%}")
             return batteryLevelPercent
         }
     }
@@ -72,22 +77,21 @@ class LEManager : BleManager<LeManagerCallbacks> {
     }
 
     private fun write(message: String): Boolean {
-        //Timber.d("write {connected=$isConnected,hasCharacteristic=${espDisplayMessageCharacteristic != null}}")
+        Timber.d("write {connected=$isConnected,hasCharacteristic=${espDisplayMessageCharacteristic != null}}")
         return if (isConnected && espDisplayMessageCharacteristic != null) {
-            val request = Request.newWriteRequest(espDisplayMessageCharacteristic, message.toByteArray())
-            enableIndications(espDisplayMessageCharacteristic)
-            requestMtu(500)
-            enqueue(request)
+            requestMtu(MTU).enqueue()
+            writeCharacteristic(espDisplayMessageCharacteristic, message.toByteArray()).enqueue()
+            true
         } else {
             false
         }
     }
     private fun writeTimeAndBatteryLevel(battLevel: Int, message: String): Boolean {
-        //Timber.d("write {connected=$isConnected,hasCharacteristic=${espDisplayMessageCharacteristic != null}}")
+        Timber.d("write {connected=$isConnected,hasCharacteristic=${espDisplayMessageCharacteristic != null}}")
         return if (isConnected && espDisplayTimeCharacteristic != null) {
-            val request = Request.newWriteRequest(espDisplayTimeCharacteristic, (battLevel.toChar() + message).toByteArray())
-            requestMtu(500)
-            enqueue(request)
+            requestMtu(MTU).enqueue()
+            writeCharacteristic(espDisplayTimeCharacteristic, (battLevel.toChar() + message).toByteArray()).enqueue()
+            true
         } else {
             false
         }
@@ -100,8 +104,8 @@ class LEManager : BleManager<LeManagerCallbacks> {
             val flag = if (displayOrientation) 1 else 2
             val barray = ByteArray(1)
             barray.set(0, flag.toByte())
-            val request = Request.newWriteRequest( espDisplayOrientationCharacteristic, barray )
-            enqueue(request)
+            writeCharacteristic(espDisplayOrientationCharacteristic, barray).enqueue()
+            true
         } else {
             false
         }
@@ -160,25 +164,84 @@ class LEManager : BleManager<LeManagerCallbacks> {
                     && espDisplayOrientationCharacteristic != null
         }
 
+
         /**
-         * This method should return a list of requests needed to initialize the profile.
-         * Enabling Service Change indications for bonded devices and reading the Battery Level value and enabling Battery Level notifications
-         * is handled before executing this queue. The queue should not have requests that are not available, e.g. should not
-         * read an optional service when it is not supported by the connected device.
-         *
-         * This method is called when the services has been discovered and the device is supported (has required service).
-         *
-         * @param gatt the gatt device with services discovered
-         * @return the queue of requests
+         * This method should set up the request queue needed to initialize the profile.
+         * Enabling Service Change indications for bonded devices is handled before executing this
+         * queue. The queue may have requests that are not available, e.g. read an optional
+         * service when it is not supported by the connected device. Such call will trigger
+         * {@link Request#fail(FailCallback)}.
+         * <p>
+         * This method is called from the main thread when the services has been discovered and
+         * the device is supported (has required service).
+         * <p>
+         * Remember to call {@link Request#enqueue()} for each request.
+         * <p>
+         * A sample initialization should look like this:
+         * <pre>
+         * &#64;Override
+         * protected void initialize() {
+         *    requestMtu(MTU)
+         *       .with((device, mtu) -> {
+         *           ...
+         *       })
+         *       .enqueue();
+         *    setNotificationCallback(characteristic)
+         *       .with((device, data) -> {
+         *           ...
+         *       });
+         *    enableNotifications(characteristic)
+         *       .done(device -> {
+         *           ...
+         *       })
+         *       .fail((device, status) -> {
+         *           ...
+         *       })
+         *       .enqueue();
+         * }
+         * </pre>
          */
-        override fun initGatt(gatt: BluetoothGatt?): Deque<Request> {
-            val queue = ArrayDeque<Request>()
-            if (espDisplayMessageCharacteristic != null) {
-                val batteryLevelPercent = Companion.readBatteryLevel(context)
-                val request = Request.newWriteRequest(espDisplayTimeCharacteristic, (batteryLevelPercent.toChar()+ForegroundService.formatter.format(Date())).toByteArray())
-                queue.add(request)
-            }
-            return queue
+        override fun initialize() {
+            Timber.i("Initialising...")
+
+            enableNotifications(espDisplayTimeCharacteristic)
+                    .done(SuccessCallback {
+                        Timber.i("Successfully enabled DisplayMessageCharacteristic notifications")
+                    })
+                    .fail { device, status ->
+                        Timber.w("Failed to enable DisplayMessageCharacteristic notifications")
+                    }.enqueue()
+            enableIndications(espDisplayMessageCharacteristic)
+                    .done(SuccessCallback {
+                        Timber.i("Successfully wrote message")
+                    })
+                    .fail(FailCallback { device, status ->
+                        Timber.w("Failed to write message to ${device.address} - status: ${status}")
+                    })
+                    .enqueue()
+
+//            requestMtu(MTU).enqueue()
+            setNotificationCallback(espDisplayTimeCharacteristic)
+                    .with(DataReceivedCallback { device, data ->
+                        Timber.i("Data received from ${device.address}")
+                    })
+            enableNotifications(espDisplayTimeCharacteristic)
+                    .done(SuccessCallback {
+                        Timber.i("Successfully enabled DisplayTimeCharacteristic notifications")
+                    })
+                    .fail { device, status ->
+                        Timber.w("Failed to enable DisplayTimeCharacteristic notifications")
+                    }.enqueue()
+            enableIndications(espDisplayTimeCharacteristic)
+                    .done(SuccessCallback {
+                        Timber.i("Successfully wrote Time & Battery status")
+                    })
+                    .fail(FailCallback { device, status ->
+                        Timber.w("Failed to write Time & Battery status to ${device.address} - status: ${status}")
+                    }).enqueue()
+
+            val batteryLevelPercent = Companion.readBatteryLevel(context)
+            writeTimeAndBatteryLevel(batteryLevelPercent, ForegroundService.formatter.format(Date()))
         }
 
         /**
