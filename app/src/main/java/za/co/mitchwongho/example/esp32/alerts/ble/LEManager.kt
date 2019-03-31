@@ -80,21 +80,6 @@ class LEManager : BleManager<LeManagerCallbacks> {
         Timber.d("write {connected=$isConnected,hasCharacteristic=${espDisplayMessageCharacteristic != null}}")
         return if (isConnected && espDisplayMessageCharacteristic != null) {
             requestMtu(MTU).enqueue()
-//            enableNotifications(espDisplayTimeCharacteristic)
-//                    .done(SuccessCallback {
-//                        Timber.i("Successfully enabled DisplayMessageCharacteristic notifications")
-//                    })
-//                    .fail { device, status ->
-//                        Timber.w("Failed to enable DisplayMessageCharacteristic notifications")
-//                    }.enqueue()
-//            enableIndications(espDisplayMessageCharacteristic)
-//                    .done(SuccessCallback {
-//                        Timber.i("Successfully wrote message")
-//                    })
-//                    .fail(FailCallback { device, status ->
-//                        Timber.w("Failed to write message to ${device.address} - status: ${status}")
-//                    })
-//                    .enqueue()
             writeCharacteristic(espDisplayMessageCharacteristic, message.toByteArray()).enqueue()
             true
         } else {
@@ -105,24 +90,6 @@ class LEManager : BleManager<LeManagerCallbacks> {
         Timber.d("write {connected=$isConnected,hasCharacteristic=${espDisplayMessageCharacteristic != null}}")
         return if (isConnected && espDisplayTimeCharacteristic != null) {
             requestMtu(MTU).enqueue()
-//            setNotificationCallback(espDisplayTimeCharacteristic)
-//                    .with(DataReceivedCallback { device, data ->
-//
-//                    })
-//            enableNotifications(espDisplayTimeCharacteristic)
-//                    .done(SuccessCallback {
-//                        Timber.i("Successfully enabled DisplayTimeCharacteristic notifications")
-//                    })
-//                    .fail { device, status ->
-//                        Timber.w("Failed to enable DisplayTimeCharacteristic notifications")
-//                    }.enqueue()
-//            enableIndications(espDisplayTimeCharacteristic)
-//                    .done(SuccessCallback {
-//                        Timber.i("Successfully wrote Time & Battery status")
-//                    })
-//                    .fail(FailCallback { device, status ->
-//                        Timber.w("Failed to write Time & Battery status to ${device.address} - status: ${status}")
-//                    }).enqueue()
             writeCharacteristic(espDisplayTimeCharacteristic, (battLevel.toChar() + message).toByteArray()).enqueue()
             true
         } else {
