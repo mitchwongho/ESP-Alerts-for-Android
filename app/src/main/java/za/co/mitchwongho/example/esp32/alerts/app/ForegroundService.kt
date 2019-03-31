@@ -10,7 +10,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
-import android.os.BatteryManager
 import android.os.Build
 import android.os.IBinder
 import android.preference.PreferenceManager
@@ -58,7 +57,7 @@ class ForegroundService : Service() {
         bleManager = LEManager(this)
         bleManager.setGattCallbacks(bleManagerCallback)
         if (bluetoothManager.adapter.state == BluetoothAdapter.STATE_ON) {
-            bleManager.connect(leDevice)
+            bleManager.connect(leDevice).enqueue()
         }
 
         val intentFilter = IntentFilter(NotificationListener.EXTRA_ACTION)
@@ -146,6 +145,7 @@ class ForegroundService : Service() {
          */
         override fun onDeviceConnected(device: BluetoothDevice) {
             super.onDeviceConnected(device)
+            Timber.d("onDeviceConnected ${device.name}")
             notify("Connected to ${device.name}")
         }
 
@@ -157,6 +157,7 @@ class ForegroundService : Service() {
          */
         override fun onDeviceConnecting(device: BluetoothDevice) {
             super.onDeviceConnecting(device)
+            Timber.d("Connecting to ${if (device.name.isNullOrEmpty()) "device" else device.name}")
             notify("Connecting to ${if (device.name.isNullOrEmpty()) "device" else device.name}")
         }
 
@@ -166,6 +167,7 @@ class ForegroundService : Service() {
          */
         override fun onDeviceDisconnecting(device: BluetoothDevice) {
             super.onDeviceDisconnecting(device)
+            Timber.d("Disconnecting from ${device.name}")
             notify("Disconnecting from ${device.name}")
         }
 
@@ -178,6 +180,7 @@ class ForegroundService : Service() {
          */
         override fun onDeviceDisconnected(device: BluetoothDevice) {
             super.onDeviceDisconnected(device)
+            Timber.d("Disconnected from ${device.name}")
             notify("Disconnected from ${device.name}")
         }
 
@@ -187,15 +190,20 @@ class ForegroundService : Service() {
          * Otherwise a [.onDeviceDisconnected] method will be called on such event.
          * @param device the device that got disconnected due to a link loss
          */
-        override fun onLinklossOccur(device: BluetoothDevice) {
-            super.onLinklossOccur(device)
+        override fun onLinkLossOccurred(device: BluetoothDevice) {
+            super.onLinkLossOccurred(device)
+            Timber.d("Lost link to ${device.name}")
             notify("Lost link to ${device.name}")
         }
 
-        override fun onError(device: BluetoothDevice, message: String?, errorCode: Int) {
+
+        override fun onError(device: BluetoothDevice, message: String, errorCode: Int) {
             super.onError(device, message, errorCode)
+            Timber.w("Error ${device.name}")
             stopSelf(startId)
         }
+
+
     }
 
     var tickReceiver: BroadcastReceiver = object : BroadcastReceiver() {

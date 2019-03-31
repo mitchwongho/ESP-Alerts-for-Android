@@ -56,7 +56,7 @@ open class LeManagerCallbacks : BleManagerCallbacks {
      * Otherwise a [.onDeviceDisconnected] method will be called on such event.
      * @param device the device that got disconnected due to a link loss
      */
-    override fun onLinklossOccur(device: BluetoothDevice) {
+    override fun onLinkLossOccurred(device: BluetoothDevice) {
         Timber.d("onLinklossOccur {address=${device.address},name=${device.name}}")
     }
 
@@ -97,7 +97,7 @@ open class LeManagerCallbacks : BleManagerCallbacks {
      * @param device target device
      * @return true to enabled battery level notifications after connecting to the device, false otherwise
      */
-    override fun shouldEnableBatteryLevelNotifications(device: BluetoothDevice?): Boolean {
+    override fun shouldEnableBatteryLevelNotifications(device: BluetoothDevice): Boolean {
 //        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         return false
     }
@@ -109,7 +109,7 @@ open class LeManagerCallbacks : BleManagerCallbacks {
      * the battery value in percent
      * @param device the device frm which the battery value has changed
      */
-    override fun onBatteryValueReceived(device: BluetoothDevice?, value: Int) {
+    override fun onBatteryValueReceived(device: BluetoothDevice, value: Int) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
@@ -117,7 +117,7 @@ open class LeManagerCallbacks : BleManagerCallbacks {
      * Called when an [BluetoothGatt.GATT_INSUFFICIENT_AUTHENTICATION] error occurred and the device bond state is NOT_BONDED
      * @param device the device that requires bonding
      */
-    override fun onBondingRequired(device: BluetoothDevice?) {
+    override fun onBondingRequired(device: BluetoothDevice) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
@@ -125,7 +125,11 @@ open class LeManagerCallbacks : BleManagerCallbacks {
      * Called when the device has been successfully bonded.
      * @param device the device that got bonded
      */
-    override fun onBonded(device: BluetoothDevice?) {
+    override fun onBonded(device: BluetoothDevice) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun onBondingFailed(device: BluetoothDevice) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
@@ -138,7 +142,7 @@ open class LeManagerCallbacks : BleManagerCallbacks {
      * the error code
      * @param device the device that caused an error
      */
-    override fun onError(device: BluetoothDevice, message: String?, errorCode: Int) {
+    override fun onError(device: BluetoothDevice, message: String, errorCode: Int) {
         Timber.e("onError {address=${device.address},name=${device.name},msg=${message},err=$errorCode}")
     }
 
